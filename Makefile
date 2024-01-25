@@ -34,7 +34,7 @@ template-update-manual:
 clean:
 	rm -rf deploy/counters/Counter.ts
 	rm -rf deploy/counters/ProxyCounter.ts
-	rmdir deploy/counters
+	rmdir deploy/counters || true
 	rm -rf src/Counter.sol
 	rm -rf src/ProxyCounter.sol
 	rm -rf test/Counter.t.sol
