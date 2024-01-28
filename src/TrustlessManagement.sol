@@ -1,24 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Plugin} from "../lib/osx-commons/contracts/src/plugin/Plugin.sol";
-import {IPermissionChecker} from "./IPermissionChecker.sol";
+import {ERC165} from "../lib/openzeppelin-contracts/contracts/utils/introspection/ERC165.sol";
 
-import {ITrustlessManagement, IDAOManager, IDAO, MANAGER_PERMISSION_ID} from "./ITrustlessManagement.sol";
+import {IPermissionChecker} from "./IPermissionChecker.sol";
+import {ITrustlessManagement, IDAOManager, IDAO} from "./ITrustlessManagement.sol";
 
 address constant NO_PERMISSION_CHECKER = address(type(uint160).max);
 bytes32 constant EXECUTION_ID = keccak256("TRUSTLESS_MANAGEMENT");
 
-abstract contract TrustlessManagement is Plugin, ITrustlessManagement {
-    mapping(uint256 => mapping(uint256 => address)) private functionBlacklist;
-    mapping(address => mapping(uint256 => address)) private zoneBlacklist;
-    mapping(uint256 => address) private fullAccess;
-    mapping(address => mapping(uint256 => address)) private zoneAccess;
-    mapping(uint256 => mapping(uint256 => address)) private functionAccess;
+abstract contract TrustlessManagement is ERC165, ITrustlessManagement {
+    mapping(IDAO dao => DAOInfo info) private daoInfo;
 
-    constructor(IDAO _dao) Plugin(_dao) {}
-
-    /// @inheritdoc Plugin
+    /// @inheritdoc ERC165
     function supportsInterface(bytes4 _interfaceId) public view virtual override returns (bool) {
         return _interfaceId == type(ITrustlessManagement).interfaceId || super.supportsInterface(_interfaceId);
     }
@@ -27,21 +21,23 @@ abstract contract TrustlessManagement is Plugin, ITrustlessManagement {
     function hasRole(address _account, uint256 _roleId) public view virtual returns (bool);
 
     /// @inheritdoc ITrustlessManagement
-    function isAllowed(uint256 _role, IDAO.Action[] calldata _actions) public view returns (bool) {
+    function isAllowed(IDAO _dao, uint256 _role, IDAO.Action[] calldata _actions) public view returns (bool) {
+        PermissionInfo storage permissions = daoInfo[_dao].permissions[_role];
+
         for (uint256 i; i < _actions.length;) {
             uint256 functionId = _functionId(_actions[i].to, bytes4(_actions[i].data));
             if (
-                checkPermission(functionBlacklist[functionId][_role], _role, _actions[i])
-                    || checkPermission(zoneBlacklist[_actions[i].to][_role], _role, _actions[i])
+                _checkPermission(permissions.functionBlacklist[functionId], _role, _actions[i])
+                    || _checkPermission(permissions.zoneBlacklist[_actions[i].to], _role, _actions[i])
             ) {
                 // Blacklisted
                 return false;
             }
 
             if (
-                !checkPermission(fullAccess[_role], _role, _actions[i])
-                    && !checkPermission(zoneAccess[_actions[i].to][_role], _role, _actions[i])
-                    && !checkPermission(functionAccess[functionId][_role], _role, _actions[i])
+                !_checkPermission(permissions.fullAccess, _role, _actions[i])
+                    && !_checkPermission(permissions.zoneAccess[_actions[i].to], _role, _actions[i])
+                    && !_checkPermission(permissions.functionAccess[functionId], _role, _actions[i])
             ) {
                 // Permission not granted
                 return false;
@@ -57,64 +53,82 @@ abstract contract TrustlessManagement is Plugin, ITrustlessManagement {
     }
 
     /// @inheritdoc IDAOManager
-    function asDAO(uint256 _role, IDAO.Action[] calldata _actions, uint256 _failureMap)
+    function asDAO(IDAO _dao, uint256 _role, IDAO.Action[] calldata _actions, uint256 _failureMap)
         external
         returns (bytes[] memory returnValues, uint256 failureMap)
     {
         if (!hasRole(msg.sender, _role)) {
             revert SenderDoesNotHaveRole();
         }
-        if (!isAllowed(_role, _actions)) {
+        if (!isAllowed(_dao, _role, _actions)) {
             revert AccessDenied();
         }
 
-        (returnValues, failureMap) = dao().execute(EXECUTION_ID, _actions, _failureMap);
-        emit Execution(msg.sender, _role, _actions, returnValues, failureMap);
+        (returnValues, failureMap) = _dao.execute(EXECUTION_ID, _actions, _failureMap);
+        emit Execution(_dao, _role, msg.sender, _actions, returnValues, failureMap);
+    }
+
+    /// @inheritdoc IDAOManager
+    function setAdmin(IDAO _dao, address _admin) external {
+        DAOInfo storage info = daoInfo[_dao];
+        _ensureSenderIsAdmin(_dao, info.admin);
+        info.admin = _admin;
+        emit AdminSet(_dao, _admin);
     }
 
     /// @inheritdoc ITrustlessManagement
-    function changeFunctionBlacklist(uint256 _role, address _zone, bytes4 _functionSelector, address _permissionChecker)
-        external
-        auth(MANAGER_PERMISSION_ID)
-    {
-        functionBlacklist[_functionId(_zone, _functionSelector)][_role] = _permissionChecker;
-        emit FunctionBlacklistChanged(_role, _zone, _functionSelector, _permissionChecker);
+    function changeFullAccess(IDAO _dao, uint256 _role, address _permissionChecker) external {
+        DAOInfo storage info = daoInfo[_dao];
+        _ensureSenderIsAdmin(_dao, info.admin);
+        info.permissions[_role].fullAccess = _permissionChecker;
+        emit FullAccessChanged(_dao, _role, _permissionChecker);
     }
 
     /// @inheritdoc ITrustlessManagement
-    function changeZoneBlacklist(uint256 _role, address _zone, address _permissionChecker)
-        external
-        auth(MANAGER_PERMISSION_ID)
-    {
-        zoneBlacklist[_zone][_role] = _permissionChecker;
-        emit ZoneBlacklistChanged(_role, _zone, _permissionChecker);
+    function changeZoneAccess(IDAO _dao, uint256 _role, address _zone, address _permissionChecker) external {
+        DAOInfo storage info = daoInfo[_dao];
+        _ensureSenderIsAdmin(_dao, info.admin);
+        info.permissions[_role].zoneAccess[_zone] = _permissionChecker;
+        emit ZoneAccessChanged(_dao, _role, _zone, _permissionChecker);
     }
 
     /// @inheritdoc ITrustlessManagement
-    function changeFullAccess(uint256 _role, address _permissionChecker) external auth(MANAGER_PERMISSION_ID) {
-        fullAccess[_role] = _permissionChecker;
-        emit FullAccessChanged(_role, _permissionChecker);
+    function changeZoneBlacklist(IDAO _dao, uint256 _role, address _zone, address _permissionChecker) external {
+        DAOInfo storage info = daoInfo[_dao];
+        _ensureSenderIsAdmin(_dao, info.admin);
+        info.permissions[_role].zoneBlacklist[_zone] = _permissionChecker;
+        emit ZoneBlacklistChanged(_dao, _role, _zone, _permissionChecker);
     }
 
     /// @inheritdoc ITrustlessManagement
-    function changeZoneAccess(uint256 _role, address _zone, address _permissionChecker)
-        external
-        auth(MANAGER_PERMISSION_ID)
-    {
-        zoneAccess[_zone][_role] = _permissionChecker;
-        emit ZoneAccessChanged(_role, _zone, _permissionChecker);
+    function changeFunctionAccess(
+        IDAO _dao,
+        uint256 _role,
+        address _zone,
+        bytes4 _functionSelector,
+        address _permissionChecker
+    ) external {
+        DAOInfo storage info = daoInfo[_dao];
+        _ensureSenderIsAdmin(_dao, info.admin);
+        info.permissions[_role].functionAccess[_functionId(_zone, _functionSelector)] = _permissionChecker;
+        emit FunctionAccessChanged(_dao, _role, _zone, _functionSelector, _permissionChecker);
     }
 
     /// @inheritdoc ITrustlessManagement
-    function changeFunctionAccess(uint256 _role, address _zone, bytes4 _functionSelector, address _permissionChecker)
-        external
-        auth(MANAGER_PERMISSION_ID)
-    {
-        functionAccess[_functionId(_zone, _functionSelector)][_role] = _permissionChecker;
-        emit FunctionAccessChanged(_role, _zone, _functionSelector, _permissionChecker);
+    function changeFunctionBlacklist(
+        IDAO _dao,
+        uint256 _role,
+        address _zone,
+        bytes4 _functionSelector,
+        address _permissionChecker
+    ) external {
+        DAOInfo storage info = daoInfo[_dao];
+        _ensureSenderIsAdmin(_dao, info.admin);
+        info.permissions[_role].functionBlacklist[_functionId(_zone, _functionSelector)] = _permissionChecker;
+        emit FunctionBlacklistChanged(_dao, _role, _zone, _functionSelector, _permissionChecker);
     }
 
-    function checkPermission(address _permissionChecker, uint256 _role, IDAO.Action calldata _action)
+    function _checkPermission(address _permissionChecker, uint256 _role, IDAO.Action calldata _action)
         internal
         view
         returns (bool)
@@ -135,5 +149,19 @@ abstract contract TrustlessManagement is Plugin, ITrustlessManagement {
     // address + function selector
     function _functionId(address _zone, bytes4 _functionSelector) internal pure returns (uint256) {
         return (uint160(bytes20(_zone)) << 32) + uint32(_functionSelector);
+    }
+
+    function _ensureSenderIsAdmin(IDAO _dao, address _admin) internal view {
+        if (_admin == address(0)) {
+            // Admin not set means DAO is the admin
+            if (msg.sender != address(_dao)) {
+                revert SenderIsNotAdmin();
+            }
+        } else {
+            // Specific admin will only be allowed. DAO is not allowed to change permissions. (for example: if it is a SubDAO)
+            if (msg.sender != _admin) {
+                revert SenderIsNotAdmin();
+            }
+        }
     }
 }

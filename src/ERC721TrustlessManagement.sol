@@ -7,7 +7,7 @@ import {TrustlessManagement, IDAO} from "./TrustlessManagement.sol";
 contract ERC721TrustlessManagement is TrustlessManagement {
     IERC721 private immutable collection;
 
-    constructor(IDAO _dao, IERC721 _collection) TrustlessManagement(_dao) {
+    constructor(IERC721 _collection) {
         collection = _collection;
     }
 

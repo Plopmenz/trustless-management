@@ -3,15 +3,19 @@ pragma solidity ^0.8.0;
 
 import {Test} from "../lib/forge-std/src/Test.sol";
 
-import {NO_PERMISSION_CHECKER} from "../src/TrustlessManagement.sol";
-import {TrustlessManagementMock, IDAO} from "./mocks/TrustlessManagementMock.sol";
+import {NO_PERMISSION_CHECKER, IDAO} from "../src/TrustlessManagement.sol";
+import {TrustlessManagementMock} from "./mocks/TrustlessManagementMock.sol";
 import {DAOMock} from "./mocks/DAOMock.sol";
 
 contract TrustlessManagementTest is Test {
+    DAOMock public dao;
     TrustlessManagementMock public trustlessManagement;
 
     function setUp() external {
-        trustlessManagement = new TrustlessManagementMock(new DAOMock());
+        dao = new DAOMock();
+        trustlessManagement = new TrustlessManagementMock();
+        vm.prank(address(dao));
+        trustlessManagement.setAdmin(dao, address(this));
     }
 
     function test_blacklist(
@@ -24,7 +28,7 @@ contract TrustlessManagementTest is Test {
         applyBlacklist(_role, _actions, _actionIndexes, _blacklistTypes);
         applyPermission(_role, _actions, _permissionTypes);
 
-        assert(!trustlessManagement.isAllowed(_role, _actions));
+        assert(!trustlessManagement.isAllowed(dao, _role, _actions));
     }
 
     function test_permission(uint256 _role, IDAO.Action[] calldata _actions, uint256[] calldata _permissionTypes)
@@ -32,11 +36,33 @@ contract TrustlessManagementTest is Test {
     {
         applyPermission(_role, _actions, _permissionTypes);
 
-        assert(trustlessManagement.isAllowed(_role, _actions));
+        assert(trustlessManagement.isAllowed(dao, _role, _actions));
     }
 
     function test_noPermission(uint256 _role, IDAO.Action[] calldata _actions) external {
-        assertEq(trustlessManagement.isAllowed(_role, _actions), _actions.length == 0);
+        assertEq(trustlessManagement.isAllowed(dao, _role, _actions), _actions.length == 0);
+    }
+
+    function test_noAdmin(uint256 _role, IDAO.Action calldata _action, address _admin) external {
+        trustlessManagement.setAdmin(dao, address(0));
+
+        vm.expectRevert();
+        trustlessManagement.changeFullAccess(dao, _role, NO_PERMISSION_CHECKER);
+
+        vm.expectRevert();
+        trustlessManagement.changeZoneAccess(dao, _role, _action.to, NO_PERMISSION_CHECKER);
+
+        vm.expectRevert();
+        trustlessManagement.changeZoneBlacklist(dao, _role, _action.to, NO_PERMISSION_CHECKER);
+
+        vm.expectRevert();
+        trustlessManagement.changeFunctionAccess(dao, _role, _action.to, bytes4(_action.data), NO_PERMISSION_CHECKER);
+
+        vm.expectRevert();
+        trustlessManagement.changeFunctionBlacklist(dao, _role, _action.to, bytes4(_action.data), NO_PERMISSION_CHECKER);
+
+        vm.expectRevert();
+        trustlessManagement.setAdmin(dao, _admin);
     }
 
     function applyBlacklist(
@@ -54,10 +80,10 @@ contract TrustlessManagementTest is Test {
             uint256 safeBlacklistType = _blacklistTypes[i] % 2;
             if (safeBlacklistType == 0) {
                 trustlessManagement.changeFunctionBlacklist(
-                    _role, _actions[safeIndex].to, bytes4(_actions[safeIndex].data), NO_PERMISSION_CHECKER
+                    dao, _role, _actions[safeIndex].to, bytes4(_actions[safeIndex].data), NO_PERMISSION_CHECKER
                 );
             } else {
-                trustlessManagement.changeZoneBlacklist(_role, _actions[safeIndex].to, NO_PERMISSION_CHECKER);
+                trustlessManagement.changeZoneBlacklist(dao, _role, _actions[safeIndex].to, NO_PERMISSION_CHECKER);
             }
         }
     }
@@ -70,12 +96,12 @@ contract TrustlessManagementTest is Test {
         for (uint256 i; i < _actions.length; i++) {
             uint256 safePermissionType = _permissionTypes[i] % 3;
             if (safePermissionType == 0) {
-                trustlessManagement.changeFullAccess(_role, NO_PERMISSION_CHECKER);
+                trustlessManagement.changeFullAccess(dao, _role, NO_PERMISSION_CHECKER);
             } else if (safePermissionType == 1) {
-                trustlessManagement.changeZoneAccess(_role, _actions[i].to, NO_PERMISSION_CHECKER);
+                trustlessManagement.changeZoneAccess(dao, _role, _actions[i].to, NO_PERMISSION_CHECKER);
             } else {
                 trustlessManagement.changeFunctionAccess(
-                    _role, _actions[i].to, bytes4(_actions[i].data), NO_PERMISSION_CHECKER
+                    dao, _role, _actions[i].to, bytes4(_actions[i].data), NO_PERMISSION_CHECKER
                 );
             }
         }

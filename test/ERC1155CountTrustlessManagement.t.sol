@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import {Test} from "../lib/forge-std/src/Test.sol";
 
 import {ERC1155CountTrustlessManagement} from "../src/ERC1155CountTrustlessManagement.sol";
-import {DAOMock} from "./mocks/DAOMock.sol";
 import {ERC1155Mock} from "./mocks/ERC1155Mock.sol";
 
 contract ERC1155CountTrustlessManagementTest is Test {
@@ -25,7 +24,7 @@ contract ERC1155CountTrustlessManagementTest is Test {
         vm.assume(_account != address(0)); // Not allowed to send tokens to zero address
 
         ERC1155CountTrustlessManagement trustlessManagement =
-            new ERC1155CountTrustlessManagement(new DAOMock(), collection, _managementTokenId);
+            new ERC1155CountTrustlessManagement(collection, _managementTokenId);
         collection.setBalance(_account, _ownedTokenId, _balance);
 
         assertEq(

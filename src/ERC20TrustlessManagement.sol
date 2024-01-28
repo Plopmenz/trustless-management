@@ -2,12 +2,12 @@
 pragma solidity ^0.8.0;
 
 import {IERC20} from "../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
-import {TrustlessManagement, IDAO} from "./TrustlessManagement.sol";
+import {TrustlessManagement} from "./TrustlessManagement.sol";
 
 contract ERC20TrustlessManagement is TrustlessManagement {
     IERC20 private immutable collection;
 
-    constructor(IDAO _dao, IERC20 _collection) TrustlessManagement(_dao) {
+    constructor(IERC20 _collection) {
         collection = _collection;
     }
 

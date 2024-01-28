@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import {Test} from "../lib/forge-std/src/Test.sol";
 
 import {ERC721TrustlessManagement} from "../src/ERC721TrustlessManagement.sol";
-import {DAOMock} from "./mocks/DAOMock.sol";
 import {ERC721Mock} from "./mocks/ERC721Mock.sol";
 
 contract ERC721TrustlessManagementTest is Test {
@@ -13,7 +12,7 @@ contract ERC721TrustlessManagementTest is Test {
 
     function setUp() external {
         collection = new ERC721Mock();
-        trustlessManagement = new ERC721TrustlessManagement(new DAOMock(), collection);
+        trustlessManagement = new ERC721TrustlessManagement(collection);
     }
 
     function test_hasRole(address _account, uint256 _tokenId, uint256 _ownedToken) external {

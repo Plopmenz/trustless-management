@@ -4,13 +4,12 @@ pragma solidity ^0.8.0;
 import {Test} from "../lib/forge-std/src/Test.sol";
 
 import {AddressTrustlessManagement} from "../src/AddressTrustlessManagement.sol";
-import {DAOMock} from "./mocks/DAOMock.sol";
 
 contract AddressTrustlessManagementTest is Test {
     AddressTrustlessManagement public trustlessManagement;
 
     function setUp() external {
-        trustlessManagement = new AddressTrustlessManagement(new DAOMock());
+        trustlessManagement = new AddressTrustlessManagement();
     }
 
     function test_positive_hasRole(address _account) external view {

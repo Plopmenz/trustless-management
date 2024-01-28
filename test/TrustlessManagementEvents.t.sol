@@ -3,16 +3,20 @@ pragma solidity ^0.8.0;
 
 import {Test, console2} from "../lib/forge-std/src/Test.sol";
 
-import {NO_PERMISSION_CHECKER, ITrustlessManagement, IDAOManager} from "../src/TrustlessManagement.sol";
-import {TrustlessManagementMock, IDAO} from "./mocks/TrustlessManagementMock.sol";
+import {NO_PERMISSION_CHECKER, ITrustlessManagement, IDAOManager, IDAO} from "../src/TrustlessManagement.sol";
+import {TrustlessManagementMock} from "./mocks/TrustlessManagementMock.sol";
 import {DAOMock} from "./mocks/DAOMock.sol";
 import {ActionHelper} from "./helpers/ActionHelper.sol";
 
 contract TrustlessManagementTest is Test {
+    DAOMock public dao;
     TrustlessManagementMock public trustlessManagement;
 
     function setUp() external {
-        trustlessManagement = new TrustlessManagementMock(new DAOMock());
+        dao = new DAOMock();
+        trustlessManagement = new TrustlessManagementMock();
+        vm.prank(address(dao));
+        trustlessManagement.setAdmin(dao, address(this));
     }
 
     /// forge-config: default.fuzz.runs = 10
@@ -23,29 +27,29 @@ contract TrustlessManagementTest is Test {
         address _permissionChecker
     ) external {
         vm.expectEmit(address(trustlessManagement));
-        emit ITrustlessManagement.FunctionBlacklistChanged(_role, _zone, _functionSelector, _permissionChecker);
-        trustlessManagement.changeFunctionBlacklist(_role, _zone, _functionSelector, _permissionChecker);
+        emit ITrustlessManagement.FunctionBlacklistChanged(dao, _role, _zone, _functionSelector, _permissionChecker);
+        trustlessManagement.changeFunctionBlacklist(dao, _role, _zone, _functionSelector, _permissionChecker);
     }
 
     /// forge-config: default.fuzz.runs = 10
     function test_changeZoneBlacklist(uint256 _role, address _zone, address _permissionChecker) external {
         vm.expectEmit(address(trustlessManagement));
-        emit ITrustlessManagement.ZoneBlacklistChanged(_role, _zone, _permissionChecker);
-        trustlessManagement.changeZoneBlacklist(_role, _zone, _permissionChecker);
+        emit ITrustlessManagement.ZoneBlacklistChanged(dao, _role, _zone, _permissionChecker);
+        trustlessManagement.changeZoneBlacklist(dao, _role, _zone, _permissionChecker);
     }
 
     /// forge-config: default.fuzz.runs = 10
     function test_changeFullAccess(uint256 _role, address _permissionChecker) external {
         vm.expectEmit(address(trustlessManagement));
-        emit ITrustlessManagement.FullAccessChanged(_role, _permissionChecker);
-        trustlessManagement.changeFullAccess(_role, _permissionChecker);
+        emit ITrustlessManagement.FullAccessChanged(dao, _role, _permissionChecker);
+        trustlessManagement.changeFullAccess(dao, _role, _permissionChecker);
     }
 
     /// forge-config: default.fuzz.runs = 10
     function test_changeZoneAccess(uint256 _role, address _zone, address _permissionChecker) external {
         vm.expectEmit(address(trustlessManagement));
-        emit ITrustlessManagement.ZoneAccessChanged(_role, _zone, _permissionChecker);
-        trustlessManagement.changeZoneAccess(_role, _zone, _permissionChecker);
+        emit ITrustlessManagement.ZoneAccessChanged(dao, _role, _zone, _permissionChecker);
+        trustlessManagement.changeZoneAccess(dao, _role, _zone, _permissionChecker);
     }
 
     /// forge-config: default.fuzz.runs = 10
@@ -56,8 +60,8 @@ contract TrustlessManagementTest is Test {
         address _permissionChecker
     ) external {
         vm.expectEmit(address(trustlessManagement));
-        emit ITrustlessManagement.FunctionAccessChanged(_role, _zone, _functionSelector, _permissionChecker);
-        trustlessManagement.changeFunctionAccess(_role, _zone, _functionSelector, _permissionChecker);
+        emit ITrustlessManagement.FunctionAccessChanged(dao, _role, _zone, _functionSelector, _permissionChecker);
+        trustlessManagement.changeFunctionAccess(dao, _role, _zone, _functionSelector, _permissionChecker);
     }
 
     /// forge-config: default.fuzz.runs = 10
@@ -73,7 +77,7 @@ contract TrustlessManagementTest is Test {
         ActionHelper actionHelper = new ActionHelper(_callableIndexes, _calldatas, _returnValues);
         vm.assume(actionHelper.isValid());
 
-        trustlessManagement.changeFullAccess(_role, NO_PERMISSION_CHECKER);
+        trustlessManagement.changeFullAccess(dao, _role, NO_PERMISSION_CHECKER);
         IDAO.Action[] memory actions = actionHelper.getActions();
         bytes[] memory shortendReturnValues = new bytes[](actions.length);
         for (uint256 i; i < shortendReturnValues.length; i++) {
@@ -81,7 +85,14 @@ contract TrustlessManagementTest is Test {
         }
 
         vm.expectEmit(address(trustlessManagement));
-        emit IDAOManager.Execution(address(this), _role, actions, shortendReturnValues, 0);
-        trustlessManagement.asDAO(_role, actions, _failureMap);
+        emit IDAOManager.Execution(dao, _role, address(this), actions, shortendReturnValues, 0);
+        trustlessManagement.asDAO(dao, _role, actions, _failureMap);
+    }
+
+    /// forge-config: default.fuzz.runs = 10
+    function test_setAdmin(address _admin) external {
+        vm.expectEmit(address(trustlessManagement));
+        emit IDAOManager.AdminSet(dao, _admin);
+        trustlessManagement.setAdmin(dao, _admin);
     }
 }
