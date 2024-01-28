@@ -3,13 +3,15 @@ pragma solidity ^0.8.0;
 
 import {Test} from "../lib/forge-std/src/Test.sol";
 
-import {NO_PERMISSION_CHECKER, IDAO} from "../src/TrustlessManagement.sol";
+import {NO_PERMISSION_CHECKER, ITrustlessManagement, IDAO} from "../src/TrustlessManagement.sol";
 import {TrustlessManagementMock} from "./mocks/TrustlessManagementMock.sol";
 import {DAOMock} from "./mocks/DAOMock.sol";
 
 contract TrustlessManagementTest is Test {
     DAOMock public dao;
     TrustlessManagementMock public trustlessManagement;
+
+    error SenderIsNotAdmin();
 
     function setUp() external {
         dao = new DAOMock();
@@ -46,23 +48,30 @@ contract TrustlessManagementTest is Test {
     function test_noAdmin(uint256 _role, IDAO.Action calldata _action, address _admin) external {
         trustlessManagement.setAdmin(dao, address(0));
 
-        vm.expectRevert();
+        vm.expectRevert(SenderIsNotAdmin.selector);
         trustlessManagement.changeFullAccess(dao, _role, NO_PERMISSION_CHECKER);
 
-        vm.expectRevert();
+        vm.expectRevert(SenderIsNotAdmin.selector);
         trustlessManagement.changeZoneAccess(dao, _role, _action.to, NO_PERMISSION_CHECKER);
 
-        vm.expectRevert();
+        vm.expectRevert(SenderIsNotAdmin.selector);
         trustlessManagement.changeZoneBlacklist(dao, _role, _action.to, NO_PERMISSION_CHECKER);
 
-        vm.expectRevert();
+        vm.expectRevert(SenderIsNotAdmin.selector);
         trustlessManagement.changeFunctionAccess(dao, _role, _action.to, bytes4(_action.data), NO_PERMISSION_CHECKER);
 
-        vm.expectRevert();
+        vm.expectRevert(SenderIsNotAdmin.selector);
         trustlessManagement.changeFunctionBlacklist(dao, _role, _action.to, bytes4(_action.data), NO_PERMISSION_CHECKER);
 
-        vm.expectRevert();
+        vm.expectRevert(SenderIsNotAdmin.selector);
         trustlessManagement.setAdmin(dao, _admin);
+    }
+
+    function test_interfaces() external view {
+        assert(trustlessManagement.supportsInterface(type(ITrustlessManagement).interfaceId));
+        // As according to spec: https://eips.ethereum.org/EIPS/eip-165
+        assert(trustlessManagement.supportsInterface(0x01ffc9a7));
+        assert(!trustlessManagement.supportsInterface(0xffffffff));
     }
 
     function applyBlacklist(

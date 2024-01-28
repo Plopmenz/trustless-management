@@ -1,4 +1,4 @@
-import { Address, Deployer } from "../web3webdeploy/types";
+import { Deployer } from "../web3webdeploy/types";
 
 export interface DeploymentSettings {}
 
