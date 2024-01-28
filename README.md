@@ -35,6 +35,13 @@ forge test
 make deploy
 ```
 
+## Local chain
+
+```shell
+anvil
+make local-fund ADDRESS="YOURADDRESSHERE"
+```
+
 ### Analyze
 
 ```shell
