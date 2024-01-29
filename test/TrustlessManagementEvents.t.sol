@@ -3,7 +3,13 @@ pragma solidity ^0.8.0;
 
 import {Test, console2} from "../lib/forge-std/src/Test.sol";
 
-import {NO_PERMISSION_CHECKER, ITrustlessManagement, IDAOManager, IDAO} from "../src/TrustlessManagement.sol";
+import {
+    NO_PERMISSION_CHECKER,
+    ITrustlessManagement,
+    IDAOManager,
+    IDAO,
+    IDAOExtensionWithAdmin
+} from "../src/TrustlessManagement.sol";
 import {TrustlessManagementMock} from "./mocks/TrustlessManagementMock.sol";
 import {DAOMock} from "./mocks/DAOMock.sol";
 import {ActionHelper} from "./helpers/ActionHelper.sol";
@@ -92,7 +98,7 @@ contract TrustlessManagementTest is Test {
     /// forge-config: default.fuzz.runs = 10
     function test_setAdmin(address _admin) external {
         vm.expectEmit(address(trustlessManagement));
-        emit IDAOManager.AdminSet(dao, _admin);
+        emit IDAOExtensionWithAdmin.AdminSet(dao, _admin);
         trustlessManagement.setAdmin(dao, _admin);
     }
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IDAOManager, IDAO} from "./IDAOManager.sol";
+import {IDAOManager, IDAO, IDAOExtensionWithAdmin} from "./IDAOManager.sol";
 
 interface ITrustlessManagement is IDAOManager {
     error SenderDoesNotHaveRole();

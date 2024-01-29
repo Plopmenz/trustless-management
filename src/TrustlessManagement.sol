@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {ERC165} from "../lib/openzeppelin-contracts/contracts/utils/introspection/ERC165.sol";
 
 import {IPermissionChecker} from "./IPermissionChecker.sol";
-import {ITrustlessManagement, IDAOManager, IDAO} from "./ITrustlessManagement.sol";
+import {ITrustlessManagement, IDAOManager, IDAO, IDAOExtensionWithAdmin} from "./ITrustlessManagement.sol";
 
 address constant NO_PERMISSION_CHECKER = address(type(uint160).max);
 bytes32 constant EXECUTION_ID = keccak256("TRUSTLESS_MANAGEMENT");
@@ -68,7 +68,7 @@ abstract contract TrustlessManagement is ERC165, ITrustlessManagement {
         emit Execution(_dao, _role, msg.sender, _actions, returnValues, failureMap);
     }
 
-    /// @inheritdoc IDAOManager
+    /// @inheritdoc IDAOExtensionWithAdmin
     function setAdmin(IDAO _dao, address _admin) external {
         DAOInfo storage info = daoInfo[_dao];
         _ensureSenderIsAdmin(_dao, info.admin);
