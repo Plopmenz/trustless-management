@@ -17,11 +17,24 @@ interface ITrustlessManagement is IDAOManager {
         IDAO indexed dao, uint256 indexed role, address zone, bytes4 functionSelector, address permissionChecker
     );
 
+    /// @notice A container for all info related to a certain DAO.
+    /// @param admin The address that can change the permissions for this DAO.
+    /// @param permissions The permissions set for this DAO.
+    /// @dev Admin as zero address / unset means that the DAO will be the admin itself.
     struct DAOInfo {
         address admin;
-        mapping(uint256 role => PermissionInfo) permissions;
+        mapping(uint256 role => PermissionInfo permission) permissions;
     }
 
+    /// @notice A container for all info related to the permissions of a certain role.
+    /// @param fullAccess This role has access to perform any actions, the address referes to a permissionChecker that can be used to impose restrictions.
+    /// @param zoneAccess This role has access to perform any actions, as long as its with a certain smart contract address (zone).
+    /// @param zoneBlacklist This role is prevented to perform any actions with a certain smart contract address (zone).
+    /// @param functionAccess This role has access to call a specific function (functionSelector) of a certain smart contract address (zone).
+    /// @param functionBlacklist This role is prevented to call a specific function (functionSelector) of a certain smart contract address (zone).
+    /// @dev In case you dont need to use any permissionChecker, you can set the address to NO_PERMISSION_CHECKER = address(type(uint160).max).
+    /// @dev In case you want to revoke the permission, you can set the permissionChecker back to default REVOKE = address(0).
+    /// @dev FunctionIds are encoded as (uint160(bytes20(_zone)) << 32) + uint32(_functionSelector).
     struct PermissionInfo {
         address fullAccess;
         mapping(address zone => address permissionChecker) zoneAccess;
