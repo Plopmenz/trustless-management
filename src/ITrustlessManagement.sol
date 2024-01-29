@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import {IDAOManager, IDAO} from "./IDAOManager.sol";
 
 interface ITrustlessManagement is IDAOManager {
-    error SenderIsNotAdmin();
     error SenderDoesNotHaveRole();
 
     event FunctionBlacklistChanged(

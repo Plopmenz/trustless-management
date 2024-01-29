@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import {IDAO} from "../lib/osx-commons/contracts/src/dao/IDAO.sol";
 
 interface IDAOExtensionWithAdmin {
+    error SenderIsNotAdmin();
+
     event AdminSet(IDAO indexed dao, address admin);
 
     /// @notice Registers or updates the admin of a DAO. The admin has the permission to change permissions.
