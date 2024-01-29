@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Test, console2} from "../lib/forge-std/src/Test.sol";
+import {Test} from "../lib/forge-std/src/Test.sol";
 
 import {
+    TrustlessManagementMock,
     NO_PERMISSION_CHECKER,
     ITrustlessManagement,
     IDAOManager,
     IDAO,
     IDAOExtensionWithAdmin
-} from "../src/TrustlessManagement.sol";
-import {TrustlessManagementMock} from "./mocks/TrustlessManagementMock.sol";
+} from "./mocks/TrustlessManagementMock.sol";
 import {DAOMock} from "./mocks/DAOMock.sol";
 import {ActionHelper} from "./helpers/ActionHelper.sol";
 

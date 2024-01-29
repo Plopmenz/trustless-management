@@ -3,8 +3,12 @@ pragma solidity ^0.8.0;
 
 import {Test} from "../lib/forge-std/src/Test.sol";
 
-import {NO_PERMISSION_CHECKER, ITrustlessManagement, IDAO} from "../src/TrustlessManagement.sol";
-import {TrustlessManagementMock} from "./mocks/TrustlessManagementMock.sol";
+import {
+    TrustlessManagementMock,
+    NO_PERMISSION_CHECKER,
+    ITrustlessManagement,
+    IDAO
+} from "./mocks/TrustlessManagementMock.sol";
 import {DAOMock} from "./mocks/DAOMock.sol";
 
 contract TrustlessManagementTest is Test {
