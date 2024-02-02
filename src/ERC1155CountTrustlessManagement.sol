@@ -8,7 +8,9 @@ contract ERC1155CountTrustlessManagement is TrustlessManagement {
     IERC1155 private immutable collection;
     uint256 private immutable tokenId;
 
-    constructor(IERC1155 _collection, uint256 _tokenId) {
+    constructor(address _admin, address _reverseRegistrar, IERC1155 _collection, uint256 _tokenId)
+        TrustlessManagement(_admin, _reverseRegistrar)
+    {
         collection = _collection;
         tokenId = _tokenId;
     }

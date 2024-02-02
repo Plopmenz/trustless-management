@@ -10,3 +10,9 @@
 [submodule "lib/osx-commons"]
 	path = lib/osx-commons
 	url = https://github.com/aragon/osx-commons
+[submodule "lib/tag-manager"]
+	path = lib/tag-manager
+	url = https://github.com/plopmenz/tag-manager
+[submodule "lib/ens-reverse-registrar"]
+	path = lib/ens-reverse-registrar
+	url = https://github.com/plopmenz/ens-reverse-registrar

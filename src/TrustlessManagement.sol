@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {ERC165} from "../lib/openzeppelin-contracts/contracts/utils/introspection/ERC165.sol";
+import {ClaimReverseENS} from "../lib/ens-reverse-registrar/src/ClaimReverseENS.sol";
 
 import {IPermissionChecker} from "./IPermissionChecker.sol";
 import {ITrustlessManagement, IDAOManager, IDAO, IDAOExtensionWithAdmin} from "./ITrustlessManagement.sol";
@@ -9,8 +10,10 @@ import {ITrustlessManagement, IDAOManager, IDAO, IDAOExtensionWithAdmin} from ".
 address constant NO_PERMISSION_CHECKER = address(type(uint160).max);
 bytes32 constant EXECUTION_ID = keccak256("TRUSTLESS_MANAGEMENT");
 
-abstract contract TrustlessManagement is ERC165, ITrustlessManagement {
+abstract contract TrustlessManagement is ERC165, ClaimReverseENS, ITrustlessManagement {
     mapping(IDAO dao => DAOInfo info) private daoInfo;
+
+    constructor(address _admin, address _reverseRegistrar) ClaimReverseENS(_reverseRegistrar, _admin) {}
 
     /// @inheritdoc ERC165
     function supportsInterface(bytes4 _interfaceId) public view virtual override returns (bool) {

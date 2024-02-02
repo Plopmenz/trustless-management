@@ -1,12 +1,12 @@
 import { Deployer } from "../web3webdeploy/types";
 
-export interface DeploymentSettings {}
+export interface TrustlessManagementDeploymentSettings {}
 
-export interface Deployment {}
+export interface TrustlessManagementDeployment {}
 
 export async function deploy(
   deployer: Deployer,
-  settings?: DeploymentSettings
-): Promise<Deployment> {
+  settings?: TrustlessManagementDeploymentSettings
+): Promise<TrustlessManagementDeployment> {
   return {};
 }

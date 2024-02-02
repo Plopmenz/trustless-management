@@ -12,7 +12,7 @@ contract ERC1155TrustlessManagementTest is Test {
 
     function setUp() external {
         collection = new ERC1155Mock();
-        trustlessManagement = new ERC1155TrustlessManagement(collection);
+        trustlessManagement = new ERC1155TrustlessManagement(address(0), address(0), collection);
     }
 
     function test_hasRole(address _account, uint256 _tokenId, uint256 _balance) external {

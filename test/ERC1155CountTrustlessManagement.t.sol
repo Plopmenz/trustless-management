@@ -24,7 +24,7 @@ contract ERC1155CountTrustlessManagementTest is Test {
         vm.assume(_account != address(0)); // Not allowed to send tokens to zero address
 
         ERC1155CountTrustlessManagement trustlessManagement =
-            new ERC1155CountTrustlessManagement(collection, _managementTokenId);
+            new ERC1155CountTrustlessManagement(address(0), address(0), collection, _managementTokenId);
         collection.setBalance(_account, _ownedTokenId, _balance);
 
         assertEq(
