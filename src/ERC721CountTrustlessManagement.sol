@@ -7,9 +7,7 @@ import {TrustlessManagement} from "./TrustlessManagement.sol";
 contract ERC721CountTrustlessManagement is TrustlessManagement {
     IERC721 private immutable collection;
 
-    constructor(address _admin, address _reverseRegistrar, IERC721 _collection)
-        TrustlessManagement(_admin, _reverseRegistrar)
-    {
+    constructor(IERC721 _collection) {
         collection = _collection;
     }
 

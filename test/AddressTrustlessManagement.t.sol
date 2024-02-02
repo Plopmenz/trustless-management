@@ -9,7 +9,7 @@ contract AddressTrustlessManagementTest is Test {
     AddressTrustlessManagement public trustlessManagement;
 
     function setUp() external {
-        trustlessManagement = new AddressTrustlessManagement(address(0), address(0));
+        trustlessManagement = new AddressTrustlessManagement();
     }
 
     function test_positive_hasRole(address _account) external view {

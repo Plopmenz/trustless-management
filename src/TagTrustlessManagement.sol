@@ -7,9 +7,7 @@ import {ITagManager} from "../lib/tag-manager/src/ITagManager.sol";
 contract TagTrustlessManagement is TrustlessManagement {
     ITagManager private immutable tagManager;
 
-    constructor(address _admin, address _reverseRegistrar, ITagManager _tagManager)
-        TrustlessManagement(_admin, _reverseRegistrar)
-    {
+    constructor(ITagManager _tagManager) {
         tagManager = _tagManager;
     }
 

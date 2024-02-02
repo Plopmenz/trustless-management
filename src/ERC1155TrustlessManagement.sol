@@ -7,9 +7,7 @@ import {TrustlessManagement, IDAO} from "./TrustlessManagement.sol";
 contract ERC1155TrustlessManagement is TrustlessManagement {
     IERC1155 private immutable collection;
 
-    constructor(address _admin, address _reverseRegistrar, IERC1155 _collection)
-        TrustlessManagement(_admin, _reverseRegistrar)
-    {
+    constructor(IERC1155 _collection) {
         collection = _collection;
     }
 

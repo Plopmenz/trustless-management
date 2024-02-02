@@ -12,7 +12,7 @@ contract ERC721CountTrustlessManagementTest is Test {
 
     function setUp() external {
         collection = new ERC721Mock();
-        trustlessManagement = new ERC721CountTrustlessManagement(address(0), address(0), collection);
+        trustlessManagement = new ERC721CountTrustlessManagement(collection);
     }
 
     function test_hasRole(address _account, uint256 _minTokens, uint8 _balance) external {
